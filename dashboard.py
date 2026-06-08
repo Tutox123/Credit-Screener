@@ -427,7 +427,7 @@ with k1:
     st.markdown(f"""<div class="kpi-card">
         <div class="kpi-label">Univers</div>
         <div class="kpi-value">{len(df_full)}</div>
-        <div class="kpi-subtext">obligations · {df_full["Issuer Name"].nunique()} émetteurs</div>
+       <div class="kpi-subtext">obligations - {df_full["Issuer Name"].nunique()} émetteurs</div>
     </div>""", unsafe_allow_html=True)
 with k2:
     avg_z = df_full["Z-Spread (bps)"].mean()
