@@ -284,20 +284,7 @@ default_cfg = load_default_cfg()
 # HEADER
 # ============================================================
 
-col_h1, col_h2, col_h3 = st.columns([2, 1, 1])
-with col_h1:
-    st.markdown(f"""
-        <div>
-            <div class="header-title">CREDIT RV SCREENER</div>
-            <div class="header-subtitle">Univers Crédit Européen · Cadre Relative Value</div>
-        </div>
-    """, unsafe_allow_html=True)
-with col_h3:
-    st.markdown(f"""
-        <div style="text-align: right; padding-top: 0.6rem;">
-            <div class="header-version">MÉTHODOLOGIE v1.0</div>
-        </div>
-    """, unsafe_allow_html=True)
+st.markdown('<div class="header-title">CREDIT SCREENER</div>', unsafe_allow_html=True)
 
 st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
 
