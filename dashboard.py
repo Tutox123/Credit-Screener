@@ -295,92 +295,119 @@ st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
 
 with st.sidebar:
     st.markdown("### Pondérations")
+    st.markdown(
+        f'<div style="color:{TEXT_MUTED}; font-size:0.7rem; line-height:1.4; '
+        f'margin-bottom:1rem;">Ajustez les poids pour recalculer les scores en temps réel.</div>',
+        unsafe_allow_html=True,
+    )
 
-    if st.button("⟲ Reset aux pondérations par défaut", use_container_width=True):
+    advanced = st.toggle("Mode avancé", value=False,
+                         help="Affiche les sous-pondérations par composante")
+
+    cfg = copy.deepcopy(default_cfg)
+
+    # ----- SCORE DE RISQUE -----
+    st.markdown(
+        f'<div style="margin-top:1.4rem; margin-bottom:0.4rem; color:{GOLD}; '
+        f'font-size:0.7rem; font-weight:600; text-transform:uppercase; letter-spacing:0.14em;">'
+        f'Score de Risque</div>'
+        f'<div style="height:1px; background:{GRID}; margin-bottom:0.6rem;"></div>',
+        unsafe_allow_html=True,
+    )
+
+    risk_idio = st.slider("Idiosyncratique", 0, 100,
+                          int(cfg["risk_score"]["idiosyncratic"]["total"] * 100),
+                          step=1, key="r_idio")
+    risk_sector = st.slider("Sectoriel", 0, 100,
+                            int(cfg["risk_score"]["sector_risk"]["total"] * 100),
+                            step=1, key="r_sec")
+    risk_macro = st.slider("Macro", 0, 100,
+                            int(cfg["risk_score"]["macro_risk"]["total"] * 100),
+                            step=1, key="r_macro")
+
+    risk_total = risk_idio + risk_sector + risk_macro
+    cls = "weight-sum-ok" if risk_total == 100 else "weight-sum-warn"
+    st.markdown(f'<div class="weight-sum {cls}">Σ = {risk_total}%</div>',
+                unsafe_allow_html=True)
+
+    cfg["risk_score"]["idiosyncratic"]["total"] = risk_idio / 100
+    cfg["risk_score"]["sector_risk"]["total"] = risk_sector / 100
+    cfg["risk_score"]["macro_risk"]["total"] = risk_macro / 100
+
+    if advanced:
+        with st.expander("Détail · Idiosyncratique"):
+            c = cfg["risk_score"]["idiosyncratic"]["components"]
+            c["bond_rating"] = st.slider("Rating", 0.0, 0.50, c["bond_rating"], 0.01, format="%.2f", key="r_ido_rat")
+            c["subordination"] = st.slider("Subordination", 0.0, 0.50, c["subordination"], 0.01, format="%.2f", key="r_ido_sub")
+            c["leverage"] = st.slider("Levier", 0.0, 0.50, c["leverage"], 0.01, format="%.2f", key="r_ido_lev")
+            c["duration"] = st.slider("Duration", 0.0, 0.50, c["duration"], 0.01, format="%.2f", key="r_ido_dur")
+
+        with st.expander("Détail · Sectoriel"):
+            c = cfg["risk_score"]["sector_risk"]["components"]
+            c["cyclicality"] = st.slider("Cyclicité", 0.0, 0.30, c["cyclicality"], 0.01, format="%.2f", key="r_sec_cyc")
+            c["default_history"] = st.slider("Hist. défaut", 0.0, 0.30, c["default_history"], 0.01, format="%.2f", key="r_sec_def")
+            c["spread_volatility"] = st.slider("Vol. spreads", 0.0, 0.30, c["spread_volatility"], 0.01, format="%.2f", key="r_sec_vol")
+
+        with st.expander("Détail · Macro"):
+            c = cfg["risk_score"]["macro_risk"]["components"]
+            c["geopolitical"] = st.slider("Géopolitique", 0.0, 0.20, c["geopolitical"], 0.01, format="%.2f", key="r_mac_geo")
+            c["rates_sensitivity"] = st.slider("Sens. taux", 0.0, 0.20, c["rates_sensitivity"], 0.01, format="%.2f", key="r_mac_rat")
+            c["fx_exposure"] = st.slider("FX", 0.0, 0.20, c["fx_exposure"], 0.01, format="%.2f", key="r_mac_fx")
+            c["regulatory"] = st.slider("Régulation", 0.0, 0.20, c["regulatory"], 0.01, format="%.2f", key="r_mac_reg")
+
+    # ----- SCORE DE REWARD -----
+    st.markdown(
+        f'<div style="margin-top:1.6rem; margin-bottom:0.4rem; color:{GOLD}; '
+        f'font-size:0.7rem; font-weight:600; text-transform:uppercase; letter-spacing:0.14em;">'
+        f'Score de Reward</div>'
+        f'<div style="height:1px; background:{GRID}; margin-bottom:0.6rem;"></div>',
+        unsafe_allow_html=True,
+    )
+
+    rew_spread = st.slider("Attractivité spread", 0, 100,
+                            int(cfg["reward_score"]["spread_attractiveness"]["total"] * 100),
+                            step=1, key="w_spread")
+    rew_carry = st.slider("Carry & Roll", 0, 100,
+                           int(cfg["reward_score"]["carry_and_roll"]["total"] * 100),
+                           step=1, key="w_carry")
+    rew_growth = st.slider("Croissance sectorielle", 0, 100,
+                            int(cfg["reward_score"]["sector_growth_momentum"]["total"] * 100),
+                            step=1, key="w_growth")
+
+    rew_total = rew_spread + rew_carry + rew_growth
+    cls = "weight-sum-ok" if rew_total == 100 else "weight-sum-warn"
+    st.markdown(f'<div class="weight-sum {cls}">Σ = {rew_total}%</div>',
+                unsafe_allow_html=True)
+
+    cfg["reward_score"]["spread_attractiveness"]["total"] = rew_spread / 100
+    cfg["reward_score"]["carry_and_roll"]["total"] = rew_carry / 100
+    cfg["reward_score"]["sector_growth_momentum"]["total"] = rew_growth / 100
+
+    if advanced:
+        with st.expander("Détail · Spread"):
+            c = cfg["reward_score"]["spread_attractiveness"]["components"]
+            c["z_spread_vs_universe"] = st.slider("Z-Spread vs Univers", 0.0, 0.60, c["z_spread_vs_universe"], 0.01, format="%.2f", key="w_spr_univ")
+            c["spread_vs_sector"] = st.slider("Pickup vs Secteur", 0.0, 0.60, c["spread_vs_sector"], 0.01, format="%.2f", key="w_spr_sec")
+            c["spread_vs_rating"] = st.slider("Pickup vs Rating", 0.0, 0.60, c["spread_vs_rating"], 0.01, format="%.2f", key="w_spr_rat")
+
+        with st.expander("Détail · Carry & Roll"):
+            c = cfg["reward_score"]["carry_and_roll"]["components"]
+            c["running_yield"] = st.slider("Yield courant", 0.0, 0.30, c["running_yield"], 0.01, format="%.2f", key="w_car_yld")
+            c["roll_down_1y"] = st.slider("Roll-down", 0.0, 0.30, c["roll_down_1y"], 0.01, format="%.2f", key="w_car_rol")
+
+        with st.expander("Détail · Croissance"):
+            c = cfg["reward_score"]["sector_growth_momentum"]["components"]
+            c["growth_outlook"] = st.slider("Perspective", 0.0, 0.30, c["growth_outlook"], 0.01, format="%.2f", key="w_gro_out")
+            c["earnings_revision"] = st.slider("Révisions ROE", 0.0, 0.30, c["earnings_revision"], 0.01, format="%.2f", key="w_gro_rev")
+            c["spread_momentum_3m"] = st.slider("Momentum 3M", 0.0, 0.30, c["spread_momentum_3m"], 0.01, format="%.2f", key="w_gro_mom")
+
+    # ----- RESET -----
+    st.markdown('<div style="height:1.5rem;"></div>', unsafe_allow_html=True)
+    if st.button("⟲ Reset"):
         for k in list(st.session_state.keys()):
             if k.startswith("r_") or k.startswith("w_"):
                 del st.session_state[k]
         st.rerun()
-
-    cfg = copy.deepcopy(default_cfg)
-
-    # ---------- RISK SCORE ----------
-    with st.expander("◆  Score de Risque - Blocs", expanded=False):
-        risk_idio = st.slider("Bloc A · Idiosyncratique (%)", 0, 100,
-                              int(cfg["risk_score"]["idiosyncratic"]["total"] * 100),
-                              step=1, key="r_idio")
-        risk_sector = st.slider("Bloc B · Risque Sectoriel (%)", 0, 100,
-                                int(cfg["risk_score"]["sector_risk"]["total"] * 100),
-                                step=1, key="r_sec")
-        risk_macro = st.slider("Bloc C · Risque Macro (%)", 0, 100,
-                                int(cfg["risk_score"]["macro_risk"]["total"] * 100),
-                                step=1, key="r_macro")
-        risk_total = risk_idio + risk_sector + risk_macro
-        cls = "weight-sum-ok" if risk_total == 100 else "weight-sum-warn"
-        st.markdown(f'<div class="weight-sum {cls}">Σ = {risk_total}% '
-                    f'{"(OK)" if risk_total == 100 else "(sera normalisé)"}</div>',
-                    unsafe_allow_html=True)
-        cfg["risk_score"]["idiosyncratic"]["total"] = risk_idio / 100
-        cfg["risk_score"]["sector_risk"]["total"] = risk_sector / 100
-        cfg["risk_score"]["macro_risk"]["total"] = risk_macro / 100
-
-    with st.expander("    └ Sous-pondérations · Idiosyncratique", expanded=False):
-        c = cfg["risk_score"]["idiosyncratic"]["components"]
-        c["bond_rating"] = st.slider("Rating Obligation", 0.0, 0.50, c["bond_rating"], 0.01, format="%.2f", key="r_ido_rat")
-        c["subordination"] = st.slider("Subordination", 0.0, 0.50, c["subordination"], 0.01, format="%.2f", key="r_ido_sub")
-        c["leverage"] = st.slider("Levier (ND/EBITDA · CET1 · S2)", 0.0, 0.50, c["leverage"], 0.01, format="%.2f", key="r_ido_lev")
-        c["duration"] = st.slider("Duration modifiée", 0.0, 0.50, c["duration"], 0.01, format="%.2f", key="r_ido_dur")
-
-    with st.expander("    └ Sous-pondérations · Sectoriel", expanded=False):
-        c = cfg["risk_score"]["sector_risk"]["components"]
-        c["cyclicality"] = st.slider("Cyclicité", 0.0, 0.30, c["cyclicality"], 0.01, format="%.2f", key="r_sec_cyc")
-        c["default_history"] = st.slider("Historique défaut", 0.0, 0.30, c["default_history"], 0.01, format="%.2f", key="r_sec_def")
-        c["spread_volatility"] = st.slider("Vol. de spreads", 0.0, 0.30, c["spread_volatility"], 0.01, format="%.2f", key="r_sec_vol")
-
-    with st.expander("    └ Sous-pondérations · Macro", expanded=False):
-        c = cfg["risk_score"]["macro_risk"]["components"]
-        c["geopolitical"] = st.slider("Géopolitique", 0.0, 0.20, c["geopolitical"], 0.01, format="%.2f", key="r_mac_geo")
-        c["rates_sensitivity"] = st.slider("Sensibilité aux taux", 0.0, 0.20, c["rates_sensitivity"], 0.01, format="%.2f", key="r_mac_rat")
-        c["fx_exposure"] = st.slider("Exposition FX", 0.0, 0.20, c["fx_exposure"], 0.01, format="%.2f", key="r_mac_fx")
-        c["regulatory"] = st.slider("Pression réglementaire", 0.0, 0.20, c["regulatory"], 0.01, format="%.2f", key="r_mac_reg")
-
-    # ---------- REWARD SCORE ----------
-    with st.expander("◆  Score de Reward - Blocs", expanded=False):
-        rew_spread = st.slider("Bloc A · Attractivité du Spread (%)", 0, 100,
-                                int(cfg["reward_score"]["spread_attractiveness"]["total"] * 100),
-                                step=1, key="w_spread")
-        rew_carry = st.slider("Bloc B · Carry & Roll (%)", 0, 100,
-                               int(cfg["reward_score"]["carry_and_roll"]["total"] * 100),
-                               step=1, key="w_carry")
-        rew_growth = st.slider("Bloc C · Croissance Sectorielle (%)", 0, 100,
-                                int(cfg["reward_score"]["sector_growth_momentum"]["total"] * 100),
-                                step=1, key="w_growth")
-        rew_total = rew_spread + rew_carry + rew_growth
-        cls = "weight-sum-ok" if rew_total == 100 else "weight-sum-warn"
-        st.markdown(f'<div class="weight-sum {cls}">Σ = {rew_total}% '
-                    f'{"(OK)" if rew_total == 100 else "(sera normalisé)"}</div>',
-                    unsafe_allow_html=True)
-        cfg["reward_score"]["spread_attractiveness"]["total"] = rew_spread / 100
-        cfg["reward_score"]["carry_and_roll"]["total"] = rew_carry / 100
-        cfg["reward_score"]["sector_growth_momentum"]["total"] = rew_growth / 100
-
-    with st.expander("    └ Sous-pondérations · Spread", expanded=False):
-        c = cfg["reward_score"]["spread_attractiveness"]["components"]
-        c["z_spread_vs_universe"] = st.slider("Z-Spread vs Univers", 0.0, 0.60, c["z_spread_vs_universe"], 0.01, format="%.2f", key="w_spr_univ")
-        c["spread_vs_sector"] = st.slider("Pickup vs Secteur", 0.0, 0.60, c["spread_vs_sector"], 0.01, format="%.2f", key="w_spr_sec")
-        c["spread_vs_rating"] = st.slider("Pickup vs Rating", 0.0, 0.60, c["spread_vs_rating"], 0.01, format="%.2f", key="w_spr_rat")
-
-    with st.expander("    └ Sous-pondérations · Carry & Roll", expanded=False):
-        c = cfg["reward_score"]["carry_and_roll"]["components"]
-        c["running_yield"] = st.slider("Yield courant", 0.0, 0.30, c["running_yield"], 0.01, format="%.2f", key="w_car_yld")
-        c["roll_down_1y"] = st.slider("Roll-down 1Y", 0.0, 0.30, c["roll_down_1y"], 0.01, format="%.2f", key="w_car_rol")
-
-    with st.expander("    └ Sous-pondérations · Croissance Sectorielle", expanded=False):
-        c = cfg["reward_score"]["sector_growth_momentum"]["components"]
-        c["growth_outlook"] = st.slider("Perspective croissance", 0.0, 0.30, c["growth_outlook"], 0.01, format="%.2f", key="w_gro_out")
-        c["earnings_revision"] = st.slider("Révisions ROE", 0.0, 0.30, c["earnings_revision"], 0.01, format="%.2f", key="w_gro_rev")
-        c["spread_momentum_3m"] = st.slider("Momentum spread 3M", 0.0, 0.30, c["spread_momentum_3m"], 0.01, format="%.2f", key="w_gro_mom")
-
 
 # ============================================================
 # SCORING LIVE
