@@ -295,7 +295,6 @@ with col_h3:
     st.markdown(f"""
         <div style="text-align: right; padding-top: 0.6rem;">
             <div class="header-version">MÉTHODOLOGIE v1.0</div>
-            <div class="header-subtitle" style="margin-top: 0.2rem;">Au 8 juin 2026</div>
         </div>
     """, unsafe_allow_html=True)
 
@@ -784,7 +783,7 @@ with tab3:
             "Reward": "{:.1f}",
             "Liquidité": "{:.0f}",
             "RV": "{:.2f}",
-        }).background_gradient(subset=["RV"], cmap="YlOrBr"),
+        }),
         use_container_width=True,
         height=min(560, 45 + top_n * 35),
     )
