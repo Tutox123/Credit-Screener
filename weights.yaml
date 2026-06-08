@@ -1,0 +1,156 @@
+# Credit RV Screener - Scoring Weights Configuration
+# All weights are centralized here for full reproducibility.
+# To adjust the methodology, modify this file and re-run scoring_engine.py.
+
+risk_score:
+  # Bloc A: Idiosyncratic Risk (65%)
+  idiosyncratic:
+    total: 0.65
+    components:
+      bond_rating: 0.28      # S&P bond-level rating
+      subordination: 0.20    # Seniority in capital structure
+      leverage: 0.12         # ND/EBITDA (corp) | CET1 (banks) | Solvency II (insurance)
+      duration: 0.05         # Modified duration
+
+  # Bloc B: Sector Risk (18%)
+  sector_risk:
+    total: 0.18
+    components:
+      cyclicality: 0.07      # Defensive vs cyclical
+      default_history: 0.06  # Historical sector default rate (Moody's)
+      spread_volatility: 0.05  # 5Y vol of sector spreads
+
+  # Bloc C: Macro / Exogenous Risk (17%)
+  macro_risk:
+    total: 0.17
+    components:
+      geopolitical: 0.06     # Geo exposure (sanctions, conflicts)
+      rates_sensitivity: 0.05  # +100bp shock impact
+      fx_exposure: 0.03      # Currency mismatch
+      regulatory: 0.03       # Regulatory pressure intensity
+
+reward_score:
+  # Bloc A: Spread Attractiveness (62%)
+  spread_attractiveness:
+    total: 0.62
+    components:
+      z_spread_vs_universe: 0.30   # Percentile vs entire universe
+      spread_vs_sector: 0.20       # Pickup vs sector median
+      spread_vs_rating: 0.12       # Pickup vs same-rating median
+
+  # Bloc B: Carry & Roll (18%)
+  carry_and_roll:
+    total: 0.18
+    components:
+      running_yield: 0.11
+      roll_down_1y: 0.07
+
+  # Bloc C: Sector Growth & Momentum (20%)
+  sector_growth_momentum:
+    total: 0.20
+    components:
+      growth_outlook: 0.10        # Forward growth prospects
+      earnings_revision: 0.07     # Consensus revisions 3M
+      spread_momentum_3m: 0.03    # Spread trajectory 3M
+
+# ============================================================
+# Static reference tables - editable for re-calibration
+# ============================================================
+
+rating_to_score:
+  # 0 = lowest risk, 100 = highest. Used for bond_rating component.
+  AAA: 2
+  "AA+": 5
+  AA: 8
+  "AA-": 12
+  "A+": 17
+  A: 22
+  "A-": 28
+  "BBB+": 35
+  BBB: 42
+  "BBB-": 50
+  "BB+": 58
+  BB: 65
+  "BB-": 72
+  "B+": 78
+  B: 84
+  "B-": 88
+  "CCC+": 92
+  CCC: 96
+  "CCC-": 99
+
+seniority_to_score:
+  Senior Secured: 0
+  Senior Unsecured: 18
+  Tier 2: 55
+  Sub Insurance: 60
+  AT1: 90
+
+# Sector risk profile (0-100)
+sector_risk_profile:
+  Banks:
+    cyclicality: 60
+    default_history: 25
+    spread_volatility: 55
+  Insurance:
+    cyclicality: 30
+    default_history: 10
+    spread_volatility: 35
+  Corporate IG:
+    cyclicality: 45  # mid (refined by sub-sector)
+    default_history: 20
+    spread_volatility: 40
+  High Yield:
+    cyclicality: 75
+    default_history: 80
+    spread_volatility: 80
+
+# Sub-sector adjustments (added to base sector cyclicality, -20 to +20)
+sub_sector_cyclicality_adj:
+  Pharma: -15
+  Utilities: -20
+  Infrastructure: -15
+  Telecom: -10
+  Retail Food: -10
+  Reinsurance: -10
+  Life: -8
+  Life & P&C: -10
+  Luxury: 5
+  Industrials: 10
+  Chemicals: 15
+  Energy: 12
+  Autos: 25
+  Autos Suppliers: 22
+  Leisure: 20
+  Services: 5
+  Technology: -5
+  GSIB: 0
+  Domestic: 8
+
+# Macro factors (0-100 risk score)
+country_geopolitical_risk:
+  FR: 12
+  DE: 12
+  NL: 10
+  CH: 8
+  ES: 18
+  IT: 22
+  UK: 18
+  US: 15
+  CN: 75
+  EM: 55
+
+# Regulatory pressure by sector (0-100)
+regulatory_pressure:
+  Banks: 75
+  Insurance: 65
+  Corporate IG: 25  # baseline (utilities/telecom higher, retail lower)
+  High Yield: 30
+
+# Growth outlook qualitative -> reward score (0-100, 100 = best growth)
+growth_outlook_to_score:
+  Strong: 85
+  Moderate: 55
+  Stable: 40
+  Mixed: 25
+  Weak: 10
