@@ -256,7 +256,10 @@ CUSTOM_CSS = f"""
     /* Hide Streamlit defaults */
     #MainMenu {{ visibility: hidden; }}
     footer {{ visibility: hidden; }}
-    header {{ visibility: hidden; }}
+</style>
+"""
+st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
+  
 </style>
 """
 st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
